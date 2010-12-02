@@ -11,7 +11,7 @@
 # this.  Otherwise you can specify the information inline as done below.
 # See http://xmlns.com/foaf/spec/ for defines fields.
 
-<> a cpack:Package ;
+<> a cpack:Library ;
 	cpack:packageName "owl" ;
 	dcterms:title "Library of OWL based predicates" ;
 	cpack:author [ a foaf:Person ;
@@ -24,7 +24,8 @@
 	    ] ;
 	cpack:description
 
-"""The package description goes here.  You can use PlDoc Wiki markup.
+"""This package provides a collection of libraries to deal with OWL
+   related tasks, mostly reasoning with OWL-properties.
 """ .
 
 
