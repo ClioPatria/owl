@@ -15,8 +15,8 @@
 	cpack:packageName "owl" ;
 	dcterms:title "Library of OWL based predicates" ;
 	cpack:author [ a foaf:Person ;
-		       foaf:name "@FOAFNAME@" ;
-		       foaf:mbox "@FOAFMBOX@" ;
+		       foaf:name "Jan Wielemaker" ;
+		       foaf:mbox <mailto:J.Wielemaker@cs.vu.nl> ;
 		     ] ;
 	cpack:primaryRepository
 	    [ a cpack:GitRepository ;
