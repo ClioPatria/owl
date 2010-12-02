@@ -31,11 +31,13 @@
 :- module(owl_sameas,
 	  [ owl_sameas/2,		% ?R1, ?R2
 	    owl_sameas_partition/2,	% +List, -PowerSet
-	    owl_sameas_representative/3 % +Algorithm, +Set, -Representative
+	    owl_sameas_representative/3,% +Algorithm, +Set, -Representative
+	    owl_sameas_map/3		% +Algorithm, +List, -Assoc
 	  ]).
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(ordsets)).
 :- use_module(library(count)).
+:- use_module(library(assoc)).
 
 :- initialization
 	rdf_set_predicate(owl:sameAs, symmetric(true)).
@@ -60,7 +62,10 @@ of resources that are possibly connected through owl:sameAs reations.
 %	True if R is equivalent to R0 through owl:sameAs properties.
 
 owl_sameas(R1, R2) :-
-	rdf_reachable(R1, owl:sameAs, R2).
+	(   rdf_reachable(R1, owl:sameAs, R2)
+	*-> true
+	;   R1 = R2			% literals
+	).
 
 %%	owl_sameas_partition(+Resources, -PowerSet) is det.
 %
@@ -74,10 +79,14 @@ owl_sameas_partition(Resources, PowerSet) :-
 
 partition([], []).
 partition([H|T], [Set0|Sets]) :-
-	findall(R, owl_sameas(H, R), Eq),
-	sort(Eq, Set0),
-	ord_subtract(T, Set0, Rest),
-	partition(Rest, Sets).
+	(   rdf_is_resource(H)
+	->  findall(R, owl_sameas(H, R), Eq),
+	    sort(Eq, Set0),
+	    ord_subtract(T, Set0, Rest),
+	    partition(Rest, Sets)
+	;   Set0 = [H],
+	    partition(T, Sets)
+	).
 
 %%	owl_sameas_representative(+Algorithm, +List, -Representer)
 %
@@ -121,3 +130,34 @@ fan_in_out(R, Fan) :-
 	proof_count(rdf(R, _, _), 100, FanOut),
 	proof_count(rdf(_, _, R), 100, FanIn),
 	Fan is FanOut + FanIn.
+
+
+%%	owl_sameas_map(+Algorithm, +List, -Assoc) is det.
+%
+%	Creates an assoc that maps  each   resource  from  List onto its
+%	_representative_. Only resources  that   are  connected  through
+%	owl:sameAs are included in Assoc. This means:
+%
+%	  1. If a resource is not in the assoc, there is no equivalent
+%	  in List.
+%	  2. If the resource maps to itself, it is the representative
+%	  and there are other resources that map to it.
+
+owl_sameas_map(Algorithm, List, Assoc) :-
+	owl_sameas_partition(List, Sets),
+	map_list_to_pairs(owl_sameas_representative(Algorithm),
+			  Sets, KeyedSets),
+	empty_assoc(Assoc0),
+	sameas_map(KeyedSets, Assoc0, Assoc).
+
+sameas_map([], Assoc, Assoc).
+sameas_map([_-[_]|T], Assoc0, Assoc) :- !,
+	sameas_map(T, Assoc0, Assoc).
+sameas_map([R-Eq|T], Assoc0, Assoc) :- !,
+	ins_eq(Eq, Assoc0, R, Assoc1),
+	sameas_map(T, Assoc1, Assoc).
+
+ins_eq([], Assoc, _, Assoc).
+ins_eq([H|T], Assoc0, R, Assoc) :-
+	put_assoc(H, Assoc0, R, Assoc1),
+	ins_eq(T, Assoc1, R, Assoc).
