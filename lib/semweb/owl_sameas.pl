@@ -79,7 +79,7 @@ owl_sameas_partition(Resources, PowerSet) :-
 
 partition([], []).
 partition([H|T], [Set0|Sets]) :-
-	(   rdf_is_resource(H)
+	(   rdf_has(H, owl:sameAs, _)
 	->  findall(R, owl_sameas(H, R), Eq),
 	    sort(Eq, Set0),
 	    ord_subtract(T, Set0, Rest),
